@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nút Cấm Bấm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Be+Vietnam+Pro:wght@500;600&display=swap">
+<style>
+/* Hazard-tape playground: one red button on warning-yellow paper, everything else gets out of its way. Single deliberate look. */
+:root{
+  --bg:#fff2bf;
+  --ink:#1f1a17;
+  --red:#e8364a;
+  --red-dark:#9e1c2c;
+  --tape:#f5c400;
+  --paper:#fffdf5;
+  --tear:#7cc6f2;
+  --muted:#6e5a2e;
+  --display:"Baloo 2","Comic Sans MS",system-ui,sans-serif;
+  --body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);overflow:hidden;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+[hidden]{display:none!important}
+
+.tape{position:fixed;left:0;right:0;height:22px;z-index:5;
+  background:repeating-linear-gradient(-45deg,var(--tape) 0 18px,var(--ink) 18px 36px)}
+.tape.top{top:0;height:calc(22px + env(safe-area-inset-top,0px))}
+.tape.bot{bottom:0;height:calc(22px + env(safe-area-inset-bottom,0px))}
+
+#head{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 9vh);z-index:3;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  text-align:center;pointer-events:none}
+#msg{font-family:var(--display);font-weight:800;font-size:clamp(2rem,8vw,3.6rem);line-height:1.02;margin:0 auto;max-width:14ch;text-wrap:balance}
+#sub{font-size:clamp(1rem,3.6vw,1.2rem);margin:.6em auto 0;max-width:30ch;color:var(--muted);text-wrap:balance;min-height:1.4em}
+.pop{animation:pop .35s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pop{from{transform:scale(.7);opacity:.2}to{transform:none;opacity:1}}
+
+#wrap{position:fixed;width:var(--s);height:var(--s);z-index:4;
+  transition:left .18s cubic-bezier(.3,1.4,.6,1),top .18s cubic-bezier(.3,1.4,.6,1),transform .5s cubic-bezier(.3,1.5,.5,1)}
+#wrap.tiny{transform:scale(.22)}
+#wrap.shake{animation:shake .45s}
+@keyframes shake{20%{transform:translateX(-10px) rotate(-6deg)}40%{transform:translateX(9px) rotate(5deg)}60%{transform:translateX(-6px) rotate(-3deg)}80%{transform:translateX(4px)}}
+#ring{position:absolute;inset:-14px;border-radius:50%;
+  background:conic-gradient(var(--ink) calc(var(--p,0)*1turn),transparent 0);
+  -webkit-mask:radial-gradient(circle,transparent calc(50% - 8px),#000 calc(50% - 7px));
+          mask:radial-gradient(circle,transparent calc(50% - 8px),#000 calc(50% - 7px))}
+
+.btn{position:absolute;inset:0;border-radius:50%;border:4px solid var(--ink);background:var(--red);
+  box-shadow:0 12px 0 var(--red-dark),0 12px 0 4px var(--ink),0 26px 30px rgba(60,30,0,.25);
+  cursor:pointer;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2%;
+  color:var(--paper);font-family:var(--display);font-weight:800;touch-action:none;
+  transition:transform .07s,box-shadow .07s}
+.btn:active,.btn.down{transform:translateY(9px);box-shadow:0 3px 0 var(--red-dark),0 3px 0 4px var(--ink),0 8px 12px rgba(60,30,0,.25)}
+.btn:focus-visible{outline:4px dashed var(--ink);outline-offset:10px}
+.btn svg{width:58%;height:auto;overflow:visible}
+.btn .lbl{font-size:calc(var(--s)*.1);letter-spacing:.04em;line-height:1;min-height:1em}
+
+#lock{position:absolute;left:50%;top:50%;width:62%;transform:translate(-50%,-38%);pointer-events:none;transition:transform .6s cubic-bezier(.5,-0.4,.8,.6),opacity .6s}
+#lock.fall{transform:translate(-30%,240%) rotate(70deg);opacity:0}
+#lock.hit{animation:lockhit .2s}
+@keyframes lockhit{50%{transform:translate(-50%,-38%) rotate(-10deg) scale(1.06)}}
+
+#bubble{position:fixed;z-index:6;pointer-events:none;font-family:var(--display);font-weight:800;font-size:1.25rem;
+  background:var(--paper);border:3px solid var(--ink);border-radius:999px;padding:.15em .8em;white-space:nowrap;
+  transform:translate(-50%,-100%);animation:float 0.9s forwards}
+@keyframes float{0%{opacity:0;transform:translate(-50%,-60%) scale(.6)}20%{opacity:1;transform:translate(-50%,-100%) scale(1)}100%{opacity:0;transform:translate(-50%,-190%)}}
+
+#clones{position:fixed;left:50%;top:56%;transform:translate(-50%,-50%);z-index:4;display:grid;grid-template-columns:repeat(4,var(--c));gap:14px}
+#clones .btn{position:relative;width:var(--c);height:var(--c);border-width:3px;
+  box-shadow:0 6px 0 var(--red-dark),0 6px 0 3px var(--ink);transition:transform .25s,opacity .25s}
+#clones .btn:active{transform:translateY(5px);box-shadow:0 1px 0 var(--red-dark),0 1px 0 3px var(--ink)}
+#clones .btn.gone{transform:scale(0) rotate(90deg);opacity:0;pointer-events:none}
+
+#count{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 40px);z-index:3;text-align:center;
+  font-weight:600;font-size:.85rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);pointer-events:none}
+#count b{font-family:var(--display);font-size:1.4rem;letter-spacing:0;color:var(--ink);font-variant-numeric:tabular-nums;vertical-align:-2px}
+
+.overlay{position:fixed;inset:0;z-index:8;display:grid;place-items:center;background:rgba(31,26,23,.55);
+  padding:calc(env(safe-area-inset-top,0px) + 24px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 24px) max(16px,env(safe-area-inset-left,0px))}
+.card{background:var(--paper);border:4px solid var(--ink);border-radius:22px;box-shadow:0 10px 0 var(--ink);
+  width:min(100%,360px);padding:26px 22px;text-align:center;animation:pop .4s cubic-bezier(.3,1.6,.5,1)}
+.card h2{font-family:var(--display);font-weight:800;margin:0;line-height:1.05}
+#call .card h2{font-size:1.6rem}
+#call .who{font-size:.85rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:14px 0 4px}
+#call .phone{width:64px;height:64px;margin:0 auto;animation:ring .5s infinite}
+@keyframes ring{25%{transform:rotate(-14deg)}75%{transform:rotate(14deg)}}
+.bar{height:16px;border:3px solid var(--ink);border-radius:999px;margin-top:16px;overflow:hidden;background:var(--bg)}
+.bar i{display:block;height:100%;width:0;background:var(--red)}
+#callNote{margin:.8em 0 0;min-height:1.4em;font-weight:600}
+
+#cert .card{width:min(100%,400px);border-style:double;border-width:8px;padding:28px 24px}
+#cert .eyebrow{font-size:.78rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin:0}
+#cert h2{font-size:clamp(2.4rem,11vw,3.2rem);color:var(--red);margin:.1em 0 .15em}
+#cert .to{margin:0;color:var(--muted)}
+#cert .name{font-family:var(--display);font-weight:800;font-size:1.45rem;line-height:1.15;margin:.2em 0 .6em;text-wrap:balance}
+#cert .why{margin:0 0 1em;line-height:1.5;text-wrap:pretty}
+#cert .why b{font-variant-numeric:tabular-nums}
+#cert .sign{display:flex;justify-content:space-between;align-items:end;gap:12px;margin:1em 0 1.2em;text-align:left}
+#cert .sign small{display:block;color:var(--muted);font-size:.75rem;letter-spacing:.1em;text-transform:uppercase}
+#cert .sign span{font-family:var(--display);font-weight:800;font-size:1.1rem}
+.stamp{width:72px;height:72px;flex:none;border-radius:50%;border:3px solid var(--red);color:var(--red);display:grid;place-items:center;
+  font-family:var(--display);font-weight:800;font-size:.72rem;line-height:1;text-align:center;transform:rotate(-14deg);padding:6px}
+.again{font-family:var(--display);font-weight:800;font-size:1.15rem;color:var(--paper);background:var(--red);border:3px solid var(--ink);
+  border-radius:999px;padding:.35em 1.3em;box-shadow:0 5px 0 var(--ink);cursor:pointer}
+.again:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
+.again:focus-visible{outline:3px dashed var(--ink);outline-offset:4px}
+
+#fx{position:fixed;inset:0;width:100%;height:100%;z-index:9;pointer-events:none}
+
+@media (prefers-reduced-motion:reduce){
+  #wrap{transition:none}
+  .pop,.card,#call .phone,#wrap.shake{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="tape top"></div>
+<div class="tape bot"></div>
+
+<div id="head" aria-live="polite">
+  <h1 id="msg">ĐỪNG BẤM NÚT NÀY</h1>
+  <p id="sub">Thật đấy. Đừng.</p>
+</div>
+
+<div id="wrap">
+  <div id="ring" hidden></div>
+  <button id="btn" class="btn" type="button" aria-label="Cái nút đỏ"><span class="face"></span><span class="lbl">ĐỪNG BẤM</span></button>
+  <svg id="lock" hidden viewBox="0 0 100 110" aria-hidden="true">
+    <path d="M28 48V32a22 22 0 0 1 44 0v16" fill="none" stroke="#1f1a17" stroke-width="10"/>
+    <path d="M28 48V32a22 22 0 0 1 44 0v16" fill="none" stroke="#c9ccd2" stroke-width="5"/>
+    <rect x="12" y="46" width="76" height="58" rx="10" fill="#f5c400" stroke="#1f1a17" stroke-width="5"/>
+    <circle cx="50" cy="70" r="7" fill="#1f1a17"/><rect x="47" y="72" width="6" height="16" rx="3" fill="#1f1a17"/>
+    <g id="cracks" fill="none" stroke="#1f1a17" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 52l10 10-4 9 8 6"/><path d="M84 58l-9 6 3 9-7 7"/><path d="M40 101l4-10 9-2 3-9"/>
+      <path d="M70 101l-3-9 6-6"/><path d="M14 90l11-4 2-8"/><path d="M60 48l-3 8 6 5"/>
+    </g>
+  </svg>
+</div>
+
+<div id="clones" hidden></div>
+<div id="count" aria-live="off">Đã bấm <b id="n">0</b> lần</div>
+
+<div id="call" class="overlay" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="callTitle">
+    <svg class="phone" viewBox="0 0 64 64" aria-hidden="true"><rect x="16" y="4" width="32" height="56" rx="7" fill="#e8364a" stroke="#1f1a17" stroke-width="4"/><rect x="21" y="12" width="22" height="34" rx="2" fill="#fffdf5"/><circle cx="32" cy="52" r="3" fill="#1f1a17"/></svg>
+    <p class="who">Đang gọi</p>
+    <h2 id="callTitle">Mẹ của cậu</h2>
+    <div class="bar"><i id="callBar"></i></div>
+    <p id="callNote">Tút... tút...</p>
+  </div>
+</div>
+
+<div id="cert" class="overlay" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="certTitle">
+    <p class="eyebrow">Cộng hòa Nút Bấm Đỏ</p>
+    <h2 id="certTitle">Giấy khen</h2>
+    <p class="to">Trân trọng trao cho</p>
+    <p class="name">Người không nghe lời nhất quả đất</p>
+    <p class="why">Vì đã bấm một cái nút được dặn rõ là đừng bấm, tổng cộng <b id="certN">0</b> lần trong <b id="certT">0</b> giây, phá một ổ khóa, làm một cái nút phát khóc và không hề hối hận.</p>
+    <div class="sign">
+      <div><small>Người ký</small><span>Cái Nút Đỏ (đã khóc)</span></div>
+      <div class="stamp">ĐÃ<br>BẤM<br>RỒI</div>
+    </div>
+    <button id="again" class="again" type="button">Chơi lại (đừng bấm)</button>
+  </div>
+</div>
+
+<canvas id="fx"></canvas>
+
+<script>
+(() => {
+"use strict";
+const $ = id => document.getElementById(id);
+const wrap=$('wrap'), btn=$('btn'), faceEl=btn.querySelector('.face'), lbl=btn.querySelector('.lbl');
+const msg=$('msg'), sub=$('sub'), nEl=$('n'), ring=$('ring'), lock=$('lock'), clones=$('clones');
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- faces ---------- */
+const W_='#fffdf5';
+function face(e){
+  const eye=(x)=>`<circle cx="${x}" cy="22" r="6" fill="${W_}"/>`;
+  const st=`fill="none" stroke="${W_}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"`;
+  let s='';
+  switch(e){
+    case 'shock': s=`<circle cx="30" cy="22" r="10" ${st}/><circle cx="70" cy="22" r="10" ${st}/>${eye(30).replace('r="6"','r="3.5"')}${eye(70).replace('r="6"','r="3.5"')}<ellipse cx="50" cy="50" rx="7" ry="9" ${st}/>`;break;
+    case 'angry': s=`${eye(30)}${eye(70)}<path d="M18 6l22 9M82 6l-22 9" ${st}/><path d="M36 54q14-12 28 0" ${st}/>`;break;
+    case 'huff': s=`<path d="M20 22h20M60 22h20" ${st}/><path d="M18 9l22 6M82 9l-22 6" ${st}/><path d="M42 50h16" ${st}/>`;break;
+    case 'smirk': s=`${eye(30)}${eye(70)}<path d="M60 8l20-3" ${st}/><path d="M34 46q18 10 32-6" ${st}/>`;break;
+    case 'tired': s=`<path d="M20 24q10-6 20 0M60 24q10-6 20 0" ${st}/><path d="M36 50q4-6 7 0t7 0 7 0 7 0" ${st}/><path d="M88 4q6 10 0 14q-6-4 0-14z" fill="#7cc6f2"/>`;break;
+    case 'sad': s=`${eye(30)}${eye(70)}<path d="M20 10l18-6M80 10l-18-6" ${st}/><path d="M36 54q14-10 28 0" ${st}/>`;break;
+    case 'cry': s=`<path d="M20 20q10 8 20 0M60 20q10 8 20 0" ${st}/><path d="M34 54q4-8 8-2t8-2 8 2 8-2" ${st}/><path d="M26 30q-4 12 0 16q4-4 0-16zM74 30q-4 12 0 16q4-4 0-16z" fill="#7cc6f2"/>`;break;
+    case 'happy': s=`<path d="M20 26l10-10 10 10M60 26l10-10 10 10" ${st}/><path d="M30 40q20 22 40 0z" fill="${W_}" stroke="${W_}" stroke-width="6" stroke-linejoin="round"/>`;break;
+    default: s=`${eye(30)}${eye(70)}<path d="M40 48h20" ${st}/>`;
+  }
+  return `<svg viewBox="0 0 100 64" aria-hidden="true">${s}</svg>`;
+}
+
+/* ---------- sound ---------- */
+const Snd={ac:null,
+  init(){ if(this.ac){this.ac.resume&&this.ac.resume();return;} const A=window.AudioContext||window.webkitAudioContext; if(!A)return; try{this.ac=new A();}catch(e){} },
+  t(f0,f1,d,type='sine',v=.2,delay=0){ if(!this.ac)return; const t=this.ac.currentTime+delay,o=this.ac.createOscillator(),g=this.ac.createGain();
+    o.type=type;o.frequency.setValueAtTime(f0,t);if(f1)o.frequency.exponentialRampToValueAtTime(f1,t+d);
+    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    o.connect(g);g.connect(this.ac.destination);o.start(t);o.stop(t+d+.05);},
+  boop(){this.t(330,180,.15,'square',.12);},
+  boing(){this.t(180,700,.22,'triangle',.2);},
+  angry(){this.t(140,90,.3,'sawtooth',.12);},
+  clank(){this.t(900,300,.08,'square',.12);this.t(1500,800,.06,'triangle',.08,.01);},
+  smash(){[700,500,350,200].forEach((f,i)=>this.t(f,f/3,.18,'sawtooth',.1,i*.04));},
+  ring(){this.t(440,null,.35,'sine',.12);this.t(480,null,.35,'sine',.12);},
+  pip(){this.t(1200,null,.07,'sine',.1);},
+  sob(){this.t(500,260,.5,'triangle',.12);this.t(480,250,.5,'triangle',.08,.5);},
+  win(){[523,659,784,1047,1319].forEach((f,i)=>this.t(f,null,.4,'triangle',.14,i*.09));}
+};
+
+/* ---------- layout ---------- */
+let S=200;
+function size(){
+  S=Math.round(Math.min(210,innerWidth*.48,innerHeight*.3));
+  document.documentElement.style.setProperty('--s',S+'px');
+  document.documentElement.style.setProperty('--c',Math.round(Math.min(68,(innerWidth-32-42)/4))+'px');
+}
+function centerPos(){return [(innerWidth-S)/2, Math.max(innerHeight*.56-S/2, innerHeight*.42)];}
+function place(x,y){wrap.style.left=x+'px';wrap.style.top=y+'px';}
+function center(){const [x,y]=centerPos();place(x,y);}
+size();center();
+addEventListener('resize',()=>{size();if(!(stage===4&&dodges<6))center();});
+
+/* ---------- helpers ---------- */
+let stage=0, presses=0, t0=0, busy=false, dodges=0, lockHits=0, lastPtr=[innerWidth/2,innerHeight/2];
+function say(m,s,f,l){
+  if(m!=null){msg.textContent=m;msg.classList.remove('pop');void msg.offsetWidth;msg.classList.add('pop');}
+  if(s!=null) sub.textContent=s;
+  if(f) faceEl.innerHTML=face(f);
+  if(l!=null) lbl.textContent=l;
+}
+function count(){presses++;nEl.textContent=presses;if(!t0)t0=performance.now();}
+function shake(){wrap.classList.remove('shake');void wrap.offsetWidth;wrap.classList.add('shake');}
+function bubble(text,x,y){const b=document.createElement('div');b.id='bubble';b.textContent=text;b.style.left=x+'px';b.style.top=y+'px';document.body.appendChild(b);setTimeout(()=>b.remove(),900);}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+function wrapMid(){const r=wrap.getBoundingClientRect();return [r.left+r.width/2,r.top];}
+
+/* ---------- dodge ---------- */
+const TAUNT=['Hụt!','Chậm thế!','Ở đây cơ!','Lêu lêu!','Suýt nữa!','Hộc...'];
+function dodge(){
+  dodges++; Snd.boing();
+  const pad=24, minY=innerHeight*.3, maxY=innerHeight-S-90;
+  let best=null,bd=-1;
+  for(let i=0;i<10;i++){
+    const x=pad+Math.random()*Math.max(1,innerWidth-S-2*pad), y=minY+Math.random()*Math.max(1,maxY-minY);
+    const d=Math.hypot(x+S/2-lastPtr[0],y+S/2-lastPtr[1]); if(d>bd){bd=d;best=[x,y];}
+  }
+  place(best[0],best[1]);
+  const [bx,by]=[best[0]+S/2,best[1]];
+  setTimeout(()=>bubble(TAUNT[dodges-1],bx,by),120);
+  if(dodges>=6){ say('Hộc... hộc...','Mệt quá rồi. Thôi bấm đi.','tired','MỆT'); }
+}
+wrap.addEventListener('pointerenter',e=>{lastPtr=[e.clientX,e.clientY];if(stage===4&&dodges<6&&e.pointerType==='mouse')dodge();});
+wrap.addEventListener('pointerdown',e=>{lastPtr=[e.clientX,e.clientY];if(stage===4&&dodges<6&&e.pointerType!=='mouse'){e.preventDefault();dodge();}});
+addEventListener('pointermove',e=>{lastPtr=[e.clientX,e.clientY];},{passive:true});
+
+/* ---------- main press ---------- */
+btn.addEventListener('click',async()=>{
+  Snd.init();
+  if(busy) return;
+  switch(stage){
+    case 0: count();Snd.boop();say('Ơ kìa.','Đã bảo đừng bấm mà.','shock','ĐỪNG');stage=1;break;
+    case 1: count();Snd.angry();shake();say('Này!','Bấm nữa là tớ giận đấy.','angry','GIẬN ĐẤY');stage=2;break;
+    case 2: count();Snd.angry();shake();say('Hứ.','Tớ giận rồi. Không chơi với cậu nữa.','huff','HỨ');stage=3;break;
+    case 3: count();Snd.boop();say('Muốn bấm à?','Bắt được tớ đã.','smirk','BẮT ĐI');dodges=0;stage=4;break;
+    case 4:
+      if(dodges<6){dodge();return;}
+      count();Snd.boop();center();wrap.classList.add('tiny');
+      say('Tớ thu nhỏ lại đây.','Nhỏ thế này xem cậu bấm kiểu gì.','smirk','');stage=5;break;
+    case 5:
+      count();Snd.clank();wrap.classList.remove('tiny');lock.removeAttribute('hidden');lock.classList.remove('fall');lockHits=0;setCracks();
+      say('Khóa luôn!','Có giỏi thì đập vỡ ổ khóa đi.','smirk','');stage=6;break;
+    case 6:
+      count();lockHits++;setCracks();lock.classList.remove('hit');void lock.getBoundingClientRect();lock.classList.add('hit');
+      if(lockHits<8){Snd.clank();sub.textContent='Ổ khóa còn '+(8-lockHits)+' nhát nữa là vỡ.';if(lockHits===5)say('Ơ... nứt rồi kìa.',null,'shock');}
+      else{Snd.smash();lock.classList.add('fall');setTimeout(()=>{lock.setAttribute('hidden','');},650);say('Vỡ khóa rồi!','Cậu khỏe thế... Đừng bấm nữa mà.','shock','ĐỪNG MÀ');stage=7;}
+      break;
+    case 7: count();await fakeCall();break;
+    case 8: count();Snd.boing();startClones();break;
+    case 10: count();Snd.sob();say('Thôi được rồi.','Giữ tớ đủ 3 giây, tớ cho cậu xem bí mật.','sad','GIỮ');stage=11;ring.hidden=false;ring.style.setProperty('--p',0);break;
+    case 11: break;
+  }
+});
+
+/* ---------- lock cracks ---------- */
+function setCracks(){[...$('cracks').children].forEach((p,i)=>{p.style.opacity=lockHits>i+1?1:0;});}
+
+/* ---------- fake phone call ---------- */
+async function fakeCall(){
+  busy=true; Snd.angry();
+  say('Được lắm.','Tớ mách mẹ cậu đây.','angry','');
+  await wait(900);
+  const ov=$('call'), bar=$('callBar'), note=$('callNote');
+  bar.style.width='0';note.textContent='Tút... tút...';ov.hidden=false;
+  const dur=3600, st=performance.now();
+  let lastRing=-1;
+  await new Promise(res=>{
+    (function step(now){
+      const k=Math.min(1,(now-st)/dur); bar.style.width=(k*100)+'%';
+      const r=Math.floor((now-st)/1200); if(r!==lastRing){lastRing=r;Snd.ring();}
+      if(k<1) requestAnimationFrame(step); else res();
+    })(st);
+  });
+  note.textContent='Thuê bao quý khách vừa gọi tạm thời không liên lạc được.';
+  await wait(1700);
+  ov.hidden=true;
+  say('Hừm. May cho cậu đấy.','Mẹ cậu không nghe máy. Lần này tha.','huff','ĐỪNG');
+  stage=8; busy=false;
+}
+
+/* ---------- find the real one ---------- */
+const NOPE=['Không phải tớ','Sai rồi','Hihi','Nhầm!','Tớ là giả','Đoán lại đi','Hụt','Ehe'];
+function startClones(){
+  say('Tìm tớ đi!','Một trong số này mới là tớ thật.','smirk');
+  wrap.hidden=true; clones.innerHTML=''; clones.hidden=false;
+  const real=Math.floor(Math.random()*16);
+  for(let i=0;i<16;i++){
+    const b=document.createElement('button');b.type='button';b.className='btn';b.setAttribute('aria-label','Một cái nút đỏ');
+    b.innerHTML=face(i%3?'smirk':'calm');
+    b.addEventListener('click',e=>{
+      Snd.init(); count();
+      const r=b.getBoundingClientRect();
+      if(i===real){
+        Snd.sob(); clones.hidden=true; wrap.hidden=false; center();
+        say('Huhu...','Cậu tìm ra tớ thật rồi. Cậu chẳng thương tớ gì cả.','cry','HUHU'); stage=10;
+      } else {
+        Snd.pip(); b.classList.add('gone'); bubble(NOPE[Math.floor(Math.random()*NOPE.length)],r.left+r.width/2,r.top);
+      }
+    });
+    clones.appendChild(b);
+  }
+  stage=9;
+}
+
+/* ---------- hold for 3 seconds ---------- */
+let holding=false, holdStart=0, holdRaf=0;
+function holdBegin(){
+  if(stage!==11||holding) return;
+  Snd.init(); holding=true; holdStart=performance.now(); btn.classList.add('down');
+  say(null,'Đừng thả ra nhé...','sad');
+  const tick=now=>{
+    if(!holding) return;
+    const k=Math.min(1,(now-holdStart)/3000); ring.style.setProperty('--p',k);
+    if(k>=.5&&k<.53) sub.textContent='Sắp được rồi...';
+    if(k>=1){holding=false;btn.classList.remove('down');finish();return;}
+    holdRaf=requestAnimationFrame(tick);
+  };
+  holdRaf=requestAnimationFrame(tick);
+}
+function holdEnd(){
+  if(!holding) return;
+  holding=false; cancelAnimationFrame(holdRaf); btn.classList.remove('down'); ring.style.setProperty('--p',0);
+  count(); Snd.boop(); say(null,'Thả sớm rồi! Lại nào, đủ 3 giây cơ.','sad');
+}
+btn.addEventListener('pointerdown',e=>{if(stage===11){e.preventDefault();try{btn.setPointerCapture(e.pointerId);}catch(_){}holdBegin();}});
+btn.addEventListener('pointerup',holdEnd);
+btn.addEventListener('pointercancel',holdEnd);
+btn.addEventListener('keydown',e=>{if(stage===11&&(e.key===' '||e.key==='Enter')){e.preventDefault();if(!e.repeat)holdBegin();}});
+btn.addEventListener('keyup',e=>{if(e.key===' '||e.key==='Enter')holdEnd();});
+btn.addEventListener('contextmenu',e=>e.preventDefault());
+
+/* ---------- finale ---------- */
+function finish(){
+  count(); stage=12; ring.hidden=true; Snd.win();
+  say('Bí mật là...','...cậu thắng rồi. Tớ phục.','happy','');
+  confetti();
+  setTimeout(()=>{
+    $('certN').textContent=presses;
+    $('certT').textContent=Math.round((performance.now()-t0)/1000);
+    $('cert').hidden=false; $('again').focus();
+  },1300);
+}
+$('again').addEventListener('click',()=>{
+  $('cert').hidden=true; stage=0; presses=0; t0=0; dodges=0; lockHits=0; busy=false;
+  nEl.textContent='0'; lock.setAttribute('hidden',''); wrap.hidden=false; wrap.classList.remove('tiny'); clones.hidden=true; ring.hidden=true;
+  center(); say('ĐỪNG BẤM NÚT NÀY','Lần này nghe lời đi.','calm','ĐỪNG BẤM'); btn.focus();
+});
+
+/* ---------- confetti ---------- */
+const fx=$('fx'), g=fx.getContext('2d'); let bits=[], fxOn=false;
+function confetti(){
+  const d=Math.min(2,devicePixelRatio||1); fx.width=innerWidth*d; fx.height=innerHeight*d; g.setTransform(d,0,0,d,0,0);
+  const cols=['#e8364a','#f5c400','#1f1a17','#7cc6f2','#fffdf5','#ff8fb1'];
+  const n=RM?60:180;
+  for(let i=0;i<n;i++){
+    const fromLeft=i%2===0;
+    bits.push({x:fromLeft?-10:innerWidth+10,y:innerHeight*(.55+Math.random()*.3),
+      vx:(fromLeft?1:-1)*(4+Math.random()*9),vy:-(9+Math.random()*10),r:Math.random()*6,vr:(Math.random()-.5)*.4,
+      w:6+Math.random()*8,h:4+Math.random()*6,c:cols[i%cols.length],life:0});
+  }
+  if(!fxOn){fxOn=true;requestAnimationFrame(drawFx);}
+}
+function drawFx(){
+  g.clearRect(0,0,innerWidth,innerHeight);
+  bits=bits.filter(b=>b.y<innerHeight+30&&b.life<400);
+  for(const b of bits){
+    b.life++; b.vy+=.32; b.vx*=.99; b.x+=b.vx; b.y+=b.vy; b.r+=b.vr;
+    g.save();g.translate(b.x,b.y);g.rotate(b.r);g.scale(1,Math.cos(b.life*.15));g.fillStyle=b.c;g.fillRect(-b.w/2,-b.h/2,b.w,b.h);g.restore();
+  }
+  if(bits.length) requestAnimationFrame(drawFx); else {fxOn=false;g.clearRect(0,0,innerWidth,innerHeight);}
+}
+
+/* start */
+faceEl.innerHTML=face('calm');
+})();
+</script>
+</body>
+</html>
